@@ -3,6 +3,9 @@ using NTL.ScriptEditor;
 
 public class CodeEditor : MonoBehaviour
 {
+    [TextArea]
+    public string SampleScript;
+
     public ScriptEditor ScriptEditor;
     private CodeFile currentCode;
     private string codeClipBoard;
@@ -26,7 +29,7 @@ public class CodeEditor : MonoBehaviour
         ScriptEditor.enabled = false;
 #endif
         //Visible = false;
-        OpenCode(new CodeFile("code_1", "extends script;\n\nfunc update()\n\nend"));
+        OpenCode(new CodeFile("code_1", SampleScript));
     }
 
     public void OpenCode(CodeFile code)

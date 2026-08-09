@@ -13,7 +13,8 @@ namespace NTL.ScriptEditor
 		public List<string> Lines { get; private set; }
 		public List<string> HL_Lines { get; private set; }
 		public int CaretPosition { get; private set; }
-		private int curLineIndex;
+        public TextSelection Selection { get; private set; }
+        private int curLineIndex;
 		private ScrollItem curTextLine;
 
 		#region Auto actions by press and hold keys
@@ -52,7 +53,9 @@ namespace NTL.ScriptEditor
 			ScriptLine.transform.localPosition = pos;
 			ScriptLine.SetCaretPosition(0);
 			CaretPosition = 0;
-		}
+            if (Selection != null)
+                Selection.Clear();
+        }
 		public void Load(string scriptText)
 		{
 			Clear();
@@ -115,7 +118,8 @@ namespace NTL.ScriptEditor
 			WrapItem.OnInitItem = OnInitLine;
 			Lines = new List<string>();
 			HL_Lines = new List<string>();
-			CaretPosition = -1;
+            Selection = new TextSelection();
+            CaretPosition = -1;
 			Keyboard.Initialize();
 			Keyboard.InputStringCallback = InputString;
 			Keyboard.BackSpaceCallback = BackSpace;
@@ -224,7 +228,7 @@ namespace NTL.ScriptEditor
 				VerticalNormalizeScroll();
 				WrapItem.OnScroll(Vector2.zero);
 			}
-		}
+        }
 #endif
 
 		private void SetWrapItemWidth()
@@ -312,7 +316,95 @@ namespace NTL.ScriptEditor
 				VerticalNormalizeScroll();
 			}
 		}
-		public void Left()
+        #region Text Selection
+
+        public void RefreshSelectionVisual()
+        {
+            if (Selection == null ||
+                Selection.IsEmpty)
+            {
+                ScriptLine.HideSelectionVisual();
+                return;
+            }
+
+            TextPosition start = Selection.Start;
+            TextPosition end = Selection.End;
+
+            // Single-line selection
+            if (start.LineIndex == end.LineIndex)
+            {
+                if (curLineIndex == start.LineIndex)
+                {
+                    ScriptLine.SetSelectionVisual(
+                        start.CharacterIndex,
+                        end.CharacterIndex);
+                }
+
+                return;
+            }
+
+            // The detailed multi-line rendering
+            // will be added in the next step.
+        }
+
+        public void BeginSelection()
+        {
+            Selection.SetAnchor(
+                new TextPosition(
+                    curLineIndex,
+                    ScriptLine.CaretPosition
+                )
+            );
+
+            RefreshSelectionVisual();
+        }
+
+        public void UpdateSelection()
+        {
+            Selection.SetActive(
+                new TextPosition(
+                    curLineIndex,
+                    ScriptLine.CaretPosition
+                )
+            );
+
+            RefreshSelectionVisual();
+        }
+
+        public void ClearSelection()
+        {
+            if (Selection == null)
+                return;
+
+            Selection.Clear();
+
+            ScriptLine.HideSelectionVisual();
+        }
+
+        public bool HasSelection()
+        {
+            return Selection != null &&
+                   !Selection.IsEmpty;
+        }
+
+        public TextPosition SelectionStart
+        {
+            get
+            {
+                return Selection.Start;
+            }
+        }
+
+        public TextPosition SelectionEnd
+        {
+            get
+            {
+                return Selection.End;
+            }
+        }
+
+        #endregion
+        public void Left()
 		{
 			ScriptlineToViewport();
 			SetupPressAction(() =>

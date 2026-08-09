@@ -275,6 +275,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dca78707d1132b04a945c1a08e84eb69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SampleScript: "extends script;\n\n// initialize code here:\nnum u = .11, i, j, frame;\nexport
+    ship s;\nbrick[] pool, bricks;\nexport brick _brick;\npool.add(_brick);\npool[0].spr.ca
+    = 0;\nwhile(i < 200)\n pool.add(clone(pool[0]));\n i += 1;\nend\nfunc create_row()\n
+    num rowy, c, pidx;\n c = 1; pidx = 0;\n while(c <= 31)\n  c += 1;\n  if(rand(0,
+    5) < 2) continue; end\n  while(pidx < pool.count)\n   brick br = pool[pidx];\n
+    \  if(br.spr.ca == 0) break; end\n   pidx += 1;\n  end\n  if(br.spr.ca == 1)\n
+    \  br = clone(br);\n   pool.add(br);\n  end\n  br.x = c; br.y = rowy; br.spr.ca
+    = 1;\n  br.set();\n  bricks.add(br);\n end\nend\nrowy = 31;\nwhile(rowy <= 41)\n
+    create_row();\n rowy += 1;\nend\n// update is called once per frame.\nfunc update()\n
+    frame += dtime;\n if(frame >= 0.7)\n  frame -= 0.7;\n  i = 0;\n  while(i < bricks.count)\n
+    \  br = bricks[i];\n   br.y -= 1; br.set();\n   i += 1;\n  end\n  rowy = 41; create_row();\n
+    end\nend\nfunc late_update()\n i = 0;\n while(i < s.gun.count)\n  bullet bu =
+    s.gun[i];\n  i += 1;\n  if(bu.spr.ca == 0) continue; end\n  j = 0;\n  while(j
+    < bricks.count)\n   br = bricks[j];\n   if(br.x == bu.x and br.y <= bu.y)\n    bu.hp
+    -= 1; br.spr.ca = 0;\n    if(bu.hp <= 0) bu.spr.ca = 0; end\n    bricks.remove(j);\n
+    \   break;\n   end\n   j += 1;\n  end\n end\nend"
   ScriptEditor: {fileID: 2114592188}
 --- !u!114 &260291828
 MonoBehaviour:
@@ -338,7 +354,6 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 2124531268}
-  - {fileID: 626569207}
   m_Father: {fileID: 1095000996}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -849,26 +864,26 @@ GameObject:
   - component: {fileID: 626569206}
   - component: {fileID: 626569205}
   m_Layer: 5
-  m_Name: Select
+  m_Name: SelectArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &626569205
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 626569204}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -765806418, guid: f70555f144d8491a825f0804e09c671c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.54472613, g: 0.50735295, b: 1, a: 0.578}
-  m_RaycastTarget: 1
+  m_Color: {r: 0.54472613, g: 0.50735295, b: 1, a: 0.39215687}
+  m_RaycastTarget: 0
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -894,18 +909,18 @@ RectTransform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 626569204}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
-  m_Father: {fileID: 329297009}
-  m_RootOrder: 1
+  m_Father: {fileID: 1095000996}
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0, y: 0.5}
+  m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_SizeDelta: {x: 100, y: 35}
+  m_Pivot: {x: 0, y: 0.5}
 --- !u!1 &641941031
 GameObject:
   m_ObjectHideFlags: 0
@@ -1654,6 +1669,7 @@ RectTransform:
   m_Children:
   - {fileID: 562253678}
   - {fileID: 329297009}
+  - {fileID: 626569207}
   m_Father: {fileID: 2114592187}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

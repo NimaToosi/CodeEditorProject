@@ -273,14 +273,14 @@ namespace NTL.ScriptEditor
             Vector2 v;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(TextRect, eventData.position, Canvas.worldCamera, out v);
             if (v.y < 0) v.y = 0;
-            if(v.x <= 4)
+            RectTransform crc = Caret.rectTransform;
+            if (v.x <= crc.sizeDelta.x)
             {
                 TextHelper.text = string.Empty;
                 HelperSizeFitter.SetLayoutHorizontal();
                 CaretPosition = 0;
                 return;
             }
-            RectTransform crc = (RectTransform)TextHelper.transform.GetChild(0);
             item.Length = 0;
             for (int i = 0; i < _text.Length; i++)
             {
@@ -288,7 +288,7 @@ namespace NTL.ScriptEditor
                 TextHelper.text = item.ToString();
                 HelperSizeFitter.SetLayoutHorizontal();
                 CaretPosition = i + 1;
-                if (crc.localPosition.x + 4 > v.x)
+                if (crc.localPosition.x + crc.sizeDelta.x > v.x)
                     break;
             }
             //CaretPosition = style.GetCursorStringIndex(TextRect.rect, new GUIContent(_text), v);
@@ -425,6 +425,64 @@ namespace NTL.ScriptEditor
         {
             caretFrame = 0.4f;
             isTyping = true;
+        }
+        public void HideSelectionVisual()
+        {
+            if (SelectArea == null)
+                return;
+
+            SelectArea.gameObject.SetActive(false);
+        }
+        private float CharacterPositionToLocalPosition(int charPos)
+        {
+            string str = TextHelper.text;
+            TextHelper.text = _text.Substring(0, charPos);
+            HelperSizeFitter.SetLayoutHorizontal();
+            float result = Caret.transform.localPosition.x + Caret.rectTransform.sizeDelta.x;
+            TextHelper.text = str;
+            return result;
+        }
+        public void SetSelectionVisual(int startCharacter, int endCharacter)
+        {
+            if (SelectArea == null)
+                return;
+
+            if (startCharacter < 0)
+                startCharacter = 0;
+
+            if (endCharacter > Text.Length)
+                endCharacter = Text.Length;
+
+            if (endCharacter < startCharacter)
+            {
+                int temp = startCharacter;
+                startCharacter = endCharacter;
+                endCharacter = temp;
+            }
+
+            float startX =
+                CharacterPositionToLocalPosition(startCharacter);
+
+            float endX =
+                CharacterPositionToLocalPosition(endCharacter);
+
+            float width = endX - startX;
+
+            if (width < 0f)
+                width = -width;
+
+            RectTransform rect =
+                SelectArea.GetComponent<RectTransform>();
+
+            rect.anchoredPosition =
+                new Vector2(startX, rect.anchoredPosition.y);
+
+            rect.sizeDelta =
+                new Vector2(
+                    width,
+                    rect.sizeDelta.y);
+
+            SelectArea.gameObject.SetActive(true);
         }
     }
 }
