@@ -9,6 +9,8 @@ namespace NTL.ScriptEditor
     {
         public ScriptEditor ScriptEditor;
         public Text Text;
+        public Image SelectArea;
+        public string RealText { get; set; }
 
         public override bool Visible
         {
@@ -33,6 +35,8 @@ namespace NTL.ScriptEditor
         {
             base.Set(index);
             Text.text = ScriptEditor.HL_Lines[index];
+            RealText  = ScriptEditor.Lines[index];
+            ScriptEditor.RefreshTextLineSelectionVisual(this);
         }
     } 
 }

@@ -426,32 +426,35 @@ namespace NTL.ScriptEditor
             caretFrame = 0.4f;
             isTyping = true;
         }
-        public void HideSelectionVisual()
+        public void HideSelectionVisual(TextLineUI lineUI)
         {
-            if (SelectArea == null)
-                return;
-
-            SelectArea.gameObject.SetActive(false);
+            Image selectArea = lineUI != null ? lineUI.SelectArea : SelectArea;
+            selectArea.gameObject.SetActive(false);
         }
-        private float CharacterPositionToLocalPosition(int charPos)
+        private float CharacterPositionToLocalPosition(string txt, int charPos)
         {
             string str = TextHelper.text;
-            TextHelper.text = _text.Substring(0, charPos);
+            TextHelper.text = txt.Substring(0, charPos);
             HelperSizeFitter.SetLayoutHorizontal();
-            float result = Caret.transform.localPosition.x + Caret.rectTransform.sizeDelta.x;
+            float result = Caret.transform.localPosition.x; //+ Caret.rectTransform.sizeDelta.x;
             TextHelper.text = str;
             return result;
         }
-        public void SetSelectionVisual(int startCharacter, int endCharacter)
+        public void SetSelectionVisual(int startCharacter, int endCharacter, TextLineUI lineUI)
         {
-            if (SelectArea == null)
-                return;
-
+            Image selectArea = SelectArea;
+            string txt = _text;
+            if(lineUI != null)
+            {
+                selectArea = lineUI.SelectArea;
+                txt = lineUI.RealText;
+            }
+            
             if (startCharacter < 0)
                 startCharacter = 0;
-
-            if (endCharacter > Text.Length)
-                endCharacter = Text.Length;
+            
+            if (endCharacter > txt.Length)
+                endCharacter = txt.Length;
 
             if (endCharacter < startCharacter)
             {
@@ -459,30 +462,63 @@ namespace NTL.ScriptEditor
                 startCharacter = endCharacter;
                 endCharacter = temp;
             }
-
+            
             float startX =
-                CharacterPositionToLocalPosition(startCharacter);
+                CharacterPositionToLocalPosition(txt, startCharacter);
 
             float endX =
-                CharacterPositionToLocalPosition(endCharacter);
+                CharacterPositionToLocalPosition(txt, endCharacter);
 
             float width = endX - startX;
 
             if (width < 0f)
                 width = -width;
 
-            RectTransform rect =
-                SelectArea.GetComponent<RectTransform>();
+            RectTransform rect = selectArea.rectTransform;
 
-            rect.anchoredPosition =
-                new Vector2(startX, rect.anchoredPosition.y);
+            rect.localPosition =
+                new Vector2(startX, rect.localPosition.y);
 
             rect.sizeDelta =
                 new Vector2(
                     width,
                     rect.sizeDelta.y);
 
-            SelectArea.gameObject.SetActive(true);
+            selectArea.gameObject.SetActive(true);
+        }
+        public void SetFullLineSelection(TextLineUI lineUI)
+        {
+            Image selectArea = SelectArea;
+            string txt = _text;
+            if (lineUI != null)
+            {
+                selectArea = lineUI.SelectArea;
+                txt = lineUI.RealText;
+            }
+
+            float startX = 0f;
+
+            float endX =
+                CharacterPositionToLocalPosition(txt, txt.Length);
+
+            float width = endX - startX;
+
+            if (width <= 0f)
+                width = 1f;
+
+            RectTransform rect = selectArea.rectTransform;
+
+            rect.anchoredPosition =
+                new Vector2(
+                    startX,
+                    rect.anchoredPosition.y);
+
+            rect.sizeDelta =
+                new Vector2(
+                    width,
+                    rect.sizeDelta.y);
+
+            selectArea.gameObject.SetActive(true);
         }
     }
 }

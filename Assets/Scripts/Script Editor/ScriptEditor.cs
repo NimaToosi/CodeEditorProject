@@ -110,10 +110,10 @@ namespace NTL.ScriptEditor
 				rc.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, 0, prc.rect.height - 45);
 			}
 			WrapItem.InitializeItems();
+			Vector2 anchoredPosition = ScriptLine.Rect.anchoredPosition;
 			ScriptLine.transform.SetParent(WrapItem.transform);
 			ScriptLine.transform.localScale = Vector3.one;
-			ScriptLine.transform.localPosition = Vector2.zero;
-			ScriptLine.Rect.sizeDelta = new Vector2(0, ScriptLine.Rect.sizeDelta.y);
+			ScriptLine.Rect.anchoredPosition = anchoredPosition;
 			ScriptLine.OnChanged = OnChangeLine;
 			WrapItem.OnInitItem = OnInitLine;
 			Lines = new List<string>();
@@ -318,56 +318,123 @@ namespace NTL.ScriptEditor
 		}
         #region Text Selection
 
-        public void RefreshSelectionVisual()
-        {
+		public void RefreshTextLineSelectionVisual(TextLineUI lineUI)
+		{
             if (Selection == null ||
                 Selection.IsEmpty)
             {
-                ScriptLine.HideSelectionVisual();
+				ScriptLine.HideSelectionVisual(lineUI);
                 return;
             }
 
             TextPosition start = Selection.Start;
             TextPosition end = Selection.End;
 
-            // Single-line selection
-            if (start.LineIndex == end.LineIndex)
-            {
-                if (curLineIndex == start.LineIndex)
-                {
-                    ScriptLine.SetSelectionVisual(
-                        start.CharacterIndex,
-                        end.CharacterIndex);
-                }
+            int firstLine = start.LineIndex;
+            int lastLine = end.LineIndex;
 
+            int index = lineUI.RealIndex;
+            string text = lineUI.RealText;
+
+            if (index < firstLine || index > lastLine)
+            {
+                ScriptLine.HideSelectionVisual(lineUI);
+				return;
+            }
+
+			if (curLineIndex == index || firstLine == lastLine)
+				return;
+
+            if (index == firstLine)
+            {
+                ScriptLine.SetSelectionVisual(
+                    start.CharacterIndex,
+                    text.Length, lineUI);
+            }
+            else if (index == lastLine)
+            {
+                ScriptLine.SetSelectionVisual(
+                    0,
+                    end.CharacterIndex, lineUI);
+            }
+            else
+            {
+                ScriptLine.SetFullLineSelection(lineUI);
+            }
+        }
+
+        public void RefreshMultiLineSelectionVisual()
+        {
+            if (Selection == null ||
+                Selection.IsEmpty)
+            {
+                HideAllSelectionVisuals();
                 return;
             }
 
-            // The detailed multi-line rendering
-            // will be added in the next step.
+            TextPosition start = Selection.Start;
+            TextPosition end = Selection.End;
+
+            int firstLine = start.LineIndex;
+            int lastLine = end.LineIndex;
+            
+            for (int i = 0; i < WrapItem.ItemList.Length; i++)
+            {
+				TextLineUI lineUI = (TextLineUI)WrapItem.ItemList[i];
+				int index = lineUI.RealIndex;
+				string text = lineUI.RealText;
+
+				if(index < firstLine || index > lastLine)
+				{
+					ScriptLine.HideSelectionVisual(lineUI);
+					continue;
+				}
+
+				if (curLineIndex == index)
+				{
+					lineUI = null;
+					text = ScriptLine.Text;
+				}
+				
+                if (firstLine == lastLine)
+                {
+					ScriptLine.SetSelectionVisual(
+						start.CharacterIndex,
+						end.CharacterIndex, null);
+				}
+                else if (index == firstLine)
+                {
+                    ScriptLine.SetSelectionVisual(
+                        start.CharacterIndex,
+                        text.Length, lineUI);
+                }
+                else if (index == lastLine)
+                {
+					ScriptLine.SetSelectionVisual(
+						0,
+						end.CharacterIndex, lineUI);
+				}
+                else
+                {
+					ScriptLine.SetFullLineSelection(lineUI);
+				}
+            }
+        }
+
+        public void RefreshSelectionVisual()
+        {
+            RefreshMultiLineSelectionVisual();
         }
 
         public void BeginSelection()
         {
-            Selection.SetAnchor(
-                new TextPosition(
-                    curLineIndex,
-                    ScriptLine.CaretPosition
-                )
-            );
-
-            RefreshSelectionVisual();
+            Selection.SetAnchor(new TextPosition(curLineIndex, ScriptLine.CaretPosition));
+			RefreshSelectionVisual();
         }
 
         public void UpdateSelection()
         {
-            Selection.SetActive(
-                new TextPosition(
-                    curLineIndex,
-                    ScriptLine.CaretPosition
-                )
-            );
-
+			Selection.SetActive(new TextPosition(curLineIndex, ScriptLine.CaretPosition));
             RefreshSelectionVisual();
         }
 
@@ -377,14 +444,23 @@ namespace NTL.ScriptEditor
                 return;
 
             Selection.Clear();
-
-            ScriptLine.HideSelectionVisual();
+			HideAllSelectionVisuals();
         }
 
         public bool HasSelection()
         {
             return Selection != null &&
                    !Selection.IsEmpty;
+        }
+
+        private void HideAllSelectionVisuals()
+        {
+			ScriptLine.HideSelectionVisual(null);
+            for (int i = 0; i < WrapItem.ItemList.Length; i++)
+            {
+                TextLineUI lineUI = (TextLineUI)WrapItem.ItemList[i];
+                ScriptLine.HideSelectionVisual(lineUI);
+            }
         }
 
         public TextPosition SelectionStart
@@ -406,7 +482,13 @@ namespace NTL.ScriptEditor
         #endregion
         public void Left()
 		{
-			ScriptlineToViewport();
+            if (HasSelection())
+            {
+                ClearSelection();
+                return;
+            }
+
+            ScriptlineToViewport();
 			SetupPressAction(() =>
 			{
 				ScriptLine.ResetCaretBlink();
@@ -417,7 +499,13 @@ namespace NTL.ScriptEditor
 		}
 		public void Right()
 		{
-			ScriptlineToViewport();
+            if (HasSelection())
+            {
+                ClearSelection();
+                return;
+            }
+
+            ScriptlineToViewport();
 			SetupPressAction(() =>
 			{
 				ScriptLine.ResetCaretBlink();
@@ -428,7 +516,13 @@ namespace NTL.ScriptEditor
 		}
 		public void Up()
 		{
-			SetupPressAction(() => 
+            if (HasSelection())
+            {
+                ClearSelection();
+                return;
+            }
+
+            SetupPressAction(() => 
 			{
 				ScriptLine.ResetCaretBlink();
 				ScriptlineToViewport();
@@ -439,11 +533,17 @@ namespace NTL.ScriptEditor
 				if (CaretPosition >= 0) ScriptLine.SetCaretPosition(CaretPosition);
 				OneLineScrollUp();
 				CaretToViewport();
-			});
+            });
 		}
 		public void Down()
 		{
-			SetupPressAction(() => 
+            if (HasSelection())
+            {
+                ClearSelection();
+                return;
+            }
+
+            SetupPressAction(() => 
 			{
 				ScriptLine.ResetCaretBlink();
 				ScriptlineToViewport();
@@ -562,14 +662,26 @@ namespace NTL.ScriptEditor
 		}
 		public void Home()
 		{
-			ScriptlineToViewport();
+            if (HasSelection())
+            {
+                ClearSelection();
+                return;
+            }
+
+            ScriptlineToViewport();
 			ScriptLine.Home();
 			CaretPosition = ScriptLine.CaretPosition;
 			CaretToViewport();
 		}
 		public void End()
 		{
-			ScriptlineToViewport();
+            if (HasSelection())
+            {
+                ClearSelection();
+                return;
+            }
+
+            ScriptlineToViewport();
 			ScriptLine.End();
 			CaretPosition = ScriptLine.CaretPosition;
 			CaretToViewport();
