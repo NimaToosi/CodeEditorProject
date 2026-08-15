@@ -49,12 +49,14 @@ namespace NTL.ScriptEditor
 
     public class ScriptLine : MonoBehaviour, IPointerDownHandler
     {
+        public ScriptEditor ScriptEditor;
         public Text TextControl;
         public Text TextHelper;
         public ContentSizeFitter TextSizeFitter;
         public ContentSizeFitter HelperSizeFitter;
         public Image Caret;
         public Image SelectArea;
+        public TouchSelectionController touchSelectionController { get; private set; }
 
         public List<Dictionary<SyntaxType, Syntax>> SyntaxList;
         public RectTransform Rect { get; private set; }
@@ -89,6 +91,7 @@ namespace NTL.ScriptEditor
         }
 
         public enum SnippetTokens { None, @if, @while, @func }
+        [HideInInspector]
         public SnippetTokens SnippetToken;
 
         private void InitColors()
@@ -122,6 +125,8 @@ namespace NTL.ScriptEditor
             //    fontSize = TextControl.fontSize
             //};
             CaretPosition = 0;
+            touchSelectionController = GetComponent<TouchSelectionController>();
+            touchSelectionController.OnLongPress = HandleLongPress;
             _text = string.Empty;
             Color c = Caret.color;
             c.a = 1;
@@ -267,8 +272,14 @@ namespace NTL.ScriptEditor
             //    return;
             //}
 
-            if (selectAllMode)
-                DeSelect(false);
+            //if (selectAllMode)
+            //    DeSelect(false);
+
+            if (ScriptEditor.HasSelection())
+            {
+                ScriptEditor.ClearSelection();
+                Caret.enabled = true;
+            }
 
             Vector2 v;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(TextRect, eventData.position, Canvas.worldCamera, out v);
@@ -519,6 +530,14 @@ namespace NTL.ScriptEditor
                     rect.sizeDelta.y);
 
             selectArea.gameObject.SetActive(true);
+        }
+        private void HandleLongPress()
+        {
+            if (ScriptEditor == null)
+                return;
+            
+            ScriptEditor.SelectWord();
+            Caret.enabled = false;
         }
     }
 }

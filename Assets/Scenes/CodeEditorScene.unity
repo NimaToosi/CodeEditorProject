@@ -1635,6 +1635,7 @@ GameObject:
   - component: {fileID: 1095000995}
   - component: {fileID: 1095000994}
   - component: {fileID: 1095000993}
+  - component: {fileID: 1095000997}
   m_Layer: 5
   m_Name: Script Line
   m_TagString: Untagged
@@ -1653,6 +1654,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b73b7b9a3aa3c124980c49812fd0be97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ScriptEditor: {fileID: 2114592188}
   TextControl: {fileID: 562253679}
   TextHelper: {fileID: 329297012}
   TextSizeFitter: {fileID: 562253676}
@@ -1714,6 +1716,19 @@ RectTransform:
   m_AnchoredPosition: {x: 5, y: 0}
   m_SizeDelta: {x: -5, y: 35}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &1095000997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1095000992}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 916fe15a69b090b42af33eba51c0aaa7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  longPressTime: 0.5
+  movementTolerance: 15
 --- !u!1 &1202563960
 GameObject:
   m_ObjectHideFlags: 0

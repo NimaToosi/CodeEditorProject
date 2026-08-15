@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 namespace NTL.ScriptEditor
 {
@@ -479,6 +480,38 @@ namespace NTL.ScriptEditor
             }
         }
 
+        public void SelectWord()
+        {
+            string text = ScriptLine.Text;
+
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            int caret =
+                ScriptLine.CaretPosition;
+
+            int start;
+            int end;
+
+            WordSelectionUtility.GetWordRange(
+                text,
+                caret,
+                out start,
+                out end);
+
+            Selection.Set(
+                new TextPosition(
+                    curLineIndex,
+                    start),
+
+                new TextPosition(
+                    curLineIndex,
+                    end)
+            );
+
+            RefreshSelectionVisual();
+        }
+
         #endregion
         public void Left()
 		{
@@ -740,7 +773,18 @@ namespace NTL.ScriptEditor
 			ScriptLine.SetCaretPosition(0);
 			CaretToViewport();
 		}
-		private void ShiftDownTexts(int realIndex)
+        public void OnPointerDownTextLineUI(int realIndex, PointerEventData eventData)
+		{
+            SetCurrentLine(realIndex);
+            ScriptLine.OnPointerDown(eventData);
+			ScriptLine.touchSelectionController.OnPointerDown(eventData);
+            SetCaretPosition();
+        }
+        public void OnPointerUpTextLineUI(PointerEventData eventData)
+		{
+			ScriptLine.touchSelectionController.OnPointerUp(eventData);
+		}
+        private void ShiftDownTexts(int realIndex)
 		{
 			if (realIndex >= Lines.Count)
 				return;

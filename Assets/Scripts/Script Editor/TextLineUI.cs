@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace NTL.ScriptEditor
 {
-    public class TextLineUI : ScrollItem, IPointerDownHandler
+    public class TextLineUI : ScrollItem, IPointerDownHandler, IPointerUpHandler
     {
         public ScriptEditor ScriptEditor;
         public Text Text;
@@ -27,10 +27,14 @@ namespace NTL.ScriptEditor
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            ScriptEditor.SetCurrentLine(RealIndex);
-            ScriptEditor.ScriptLine.OnPointerDown(eventData);
-            ScriptEditor.SetCaretPosition();
+            ScriptEditor.OnPointerDownTextLineUI(RealIndex, eventData);
         }
+
+        public void OnPointerUp(PointerEventData eventData)
+        {
+            ScriptEditor.OnPointerUpTextLineUI(eventData);
+        }
+
         public override void Set(int index)
         {
             base.Set(index);
