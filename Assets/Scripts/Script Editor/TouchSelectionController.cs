@@ -7,8 +7,8 @@ namespace NTL.ScriptEditor
     public class TouchSelectionController :
         MonoBehaviour,
         IPointerDownHandler,
-        IPointerUpHandler,
-        IDragHandler
+        IPointerUpHandler//,
+        //IDragHandler
     {
         [SerializeField]
         private float longPressTime = 0.5f;
@@ -24,17 +24,17 @@ namespace NTL.ScriptEditor
 
         private bool longPressTriggered;
 
-        private bool dragging;
+        //private bool dragging;
 
         public Action OnLongPress;
 
-        public Action<PointerEventData> OnSelectionDrag;
+        //public Action<PointerEventData> OnSelectionDrag;
 
         public void OnPointerDown(
             PointerEventData eventData)
         {
             pointerDown = true;
-            dragging = false;
+            //dragging = false;
             longPressTriggered = false;
 
             pointerDownTime =
@@ -48,20 +48,20 @@ namespace NTL.ScriptEditor
             PointerEventData eventData)
         {
             pointerDown = false;
-            dragging = false;
+            //dragging = false;
         }
 
-        public void OnDrag(
-            PointerEventData eventData)
-        {
-            if (!longPressTriggered)
-                return;
+        //public void OnDrag(
+        //    PointerEventData eventData)
+        //{
+        //    if (!longPressTriggered)
+        //        return;
 
-            dragging = true;
+        //    dragging = true;
 
-            if (OnSelectionDrag != null)
-                OnSelectionDrag(eventData);
-        }
+        //    if (OnSelectionDrag != null)
+        //        OnSelectionDrag(eventData);
+        //}
 
         private void Update()
         {

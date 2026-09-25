@@ -111,6 +111,32 @@ namespace NTL.ScriptEditor
             active = position;
         }
 
+        public void SetStart(TextPosition position)
+        {
+            if (Compare(position, End) <= 0)
+            {
+                anchor = position;
+            }
+            else
+            {
+                anchor = End;
+                active = position;
+            }
+        }
+
+        public void SetEnd(TextPosition position)
+        {
+            if (Compare(position, Start) >= 0)
+            {
+                active = position;
+            }
+            else
+            {
+                active = Start;
+                anchor = position;
+            }
+        }
+
         public void Set(TextPosition start, TextPosition end)
         {
             anchor = start;

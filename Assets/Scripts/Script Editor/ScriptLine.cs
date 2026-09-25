@@ -281,27 +281,7 @@ namespace NTL.ScriptEditor
                 Caret.enabled = true;
             }
 
-            Vector2 v;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(TextRect, eventData.position, Canvas.worldCamera, out v);
-            if (v.y < 0) v.y = 0;
-            RectTransform crc = Caret.rectTransform;
-            if (v.x <= crc.sizeDelta.x)
-            {
-                TextHelper.text = string.Empty;
-                HelperSizeFitter.SetLayoutHorizontal();
-                CaretPosition = 0;
-                return;
-            }
-            item.Length = 0;
-            for (int i = 0; i < _text.Length; i++)
-            {
-                item.Append(_text[i]);
-                TextHelper.text = item.ToString();
-                HelperSizeFitter.SetLayoutHorizontal();
-                CaretPosition = i + 1;
-                if (crc.localPosition.x + crc.sizeDelta.x > v.x)
-                    break;
-            }
+            CaretPosition = ScreenPositionToCharacterIndex(_text, eventData.position);
             //CaretPosition = style.GetCursorStringIndex(TextRect.rect, new GUIContent(_text), v);
             //SetCaretPos();
         }
@@ -442,12 +422,50 @@ namespace NTL.ScriptEditor
             Image selectArea = lineUI != null ? lineUI.SelectArea : SelectArea;
             selectArea.gameObject.SetActive(false);
         }
-        private float CharacterPositionToLocalPosition(string txt, int charPos)
+        public int WorldPositionToCharacterIndex(string txt, Vector3 pos)
+        {
+            return ScreenPositionToCharacterIndex(txt, RectTransformUtility.WorldToScreenPoint(Canvas.worldCamera, pos));
+        }
+        private int ScreenPositionToCharacterIndex(string txt, Vector2 screenPos)
+        {
+            Vector2 v;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(TextRect, screenPos, Canvas.worldCamera, out v);
+            if (v.y < 0) v.y = 0;
+            RectTransform crc = Caret.rectTransform;
+            if (v.x <= crc.sizeDelta.x)
+            {
+                TextHelper.text = string.Empty;
+                HelperSizeFitter.SetLayoutHorizontal();
+                return 0;
+            }
+            item.Length = 0;
+            int charPos = 0;
+            for (int i = 0; i < txt.Length; i++)
+            {
+                item.Append(txt[i]);
+                TextHelper.text = item.ToString();
+                HelperSizeFitter.SetLayoutHorizontal();
+                charPos = i + 1;
+                if (crc.localPosition.x + crc.sizeDelta.x > v.x)
+                    break;
+            }
+            return charPos;
+        }
+        private float CharacterIndexToLocalPosition(string txt, int charPos)
         {
             string str = TextHelper.text;
             TextHelper.text = txt.Substring(0, charPos);
             HelperSizeFitter.SetLayoutHorizontal();
             float result = Caret.transform.localPosition.x; //+ Caret.rectTransform.sizeDelta.x;
+            TextHelper.text = str;
+            return result;
+        }
+        public Vector2 GetCharacterWorldPosition(string txt, int charPos)
+        {
+            string str = TextHelper.text;
+            TextHelper.text = txt.Substring(0, charPos);
+            HelperSizeFitter.SetLayoutHorizontal();
+            Vector2 result = Caret.transform.position;
             TextHelper.text = str;
             return result;
         }
@@ -475,10 +493,10 @@ namespace NTL.ScriptEditor
             }
             
             float startX =
-                CharacterPositionToLocalPosition(txt, startCharacter);
+                CharacterIndexToLocalPosition(txt, startCharacter);
 
             float endX =
-                CharacterPositionToLocalPosition(txt, endCharacter);
+                CharacterIndexToLocalPosition(txt, endCharacter);
 
             float width = endX - startX;
 
@@ -510,7 +528,7 @@ namespace NTL.ScriptEditor
             float startX = 0f;
 
             float endX =
-                CharacterPositionToLocalPosition(txt, txt.Length);
+                CharacterIndexToLocalPosition(txt, txt.Length);
 
             float width = endX - startX;
 

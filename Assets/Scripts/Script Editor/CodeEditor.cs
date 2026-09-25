@@ -78,6 +78,8 @@ public class CodeEditor : MonoBehaviour
         ScriptEditor.enabled = false;
 #endif
         Visible = false;
+
+        Application.Quit();
     }
     //private void ApplyChanges(CodeFile codeFile)
     //{

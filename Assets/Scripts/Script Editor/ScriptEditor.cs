@@ -17,11 +17,13 @@ namespace NTL.ScriptEditor
         public TextSelection Selection { get; private set; }
         private int curLineIndex;
 		private ScrollItem curTextLine;
+        [SerializeField]
+        private SelectionHandleController selectionHandleController;
 
-		#region Auto actions by press and hold keys
+        #region Auto actions by press and hold keys
 
-		//Auto actions by press and hold keys
-		private bool keyPress;
+        //Auto actions by press and hold keys
+        private bool keyPress;
 		private float pressFrame;
 		private float actionFrame;
 		private float maxActionFrame;
@@ -110,7 +112,7 @@ namespace NTL.ScriptEditor
 				RectTransform prc = (RectTransform)transform.parent;
 				rc.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, 0, prc.rect.height - 45);
 			}
-			WrapItem.InitializeItems();
+            WrapItem.InitializeItems();
 			Vector2 anchoredPosition = ScriptLine.Rect.anchoredPosition;
 			ScriptLine.transform.SetParent(WrapItem.transform);
 			ScriptLine.transform.localScale = Vector3.one;
@@ -121,7 +123,11 @@ namespace NTL.ScriptEditor
 			HL_Lines = new List<string>();
             Selection = new TextSelection();
             CaretPosition = -1;
-			Keyboard.Initialize();
+            if (selectionHandleController != null)
+            {
+                selectionHandleController.Initialize(this);
+            }
+            Keyboard.Initialize();
 			Keyboard.InputStringCallback = InputString;
 			Keyboard.BackSpaceCallback = BackSpace;
 			Keyboard.LeftCallbak = Left;
@@ -317,9 +323,38 @@ namespace NTL.ScriptEditor
 				VerticalNormalizeScroll();
 			}
 		}
+		private TextLineUI GetTextLineUI(int lineIndex)
+		{
+			for (int i = 0; i < WrapItem.ItemList.Length; i++)
+			{
+				TextLineUI line = (TextLineUI)WrapItem.ItemList[i];
+				if (!line.gameObject.activeSelf)
+					continue;
+				if (line.RealIndex == lineIndex)
+					return line;
+			}
+			return null;
+		}
         #region Text Selection
 
-		public void RefreshTextLineSelectionVisual(TextLineUI lineUI)
+        public void RefreshSelectionHandles()
+        {
+            if (selectionHandleController == null)
+                return;
+
+            //if (Selection == null ||
+            //    Selection.IsEmpty)
+            //{
+            //    selectionHandleController.Hide();
+            //    return;
+            //}
+
+            selectionHandleController.PositionHandles(
+                Selection.Start,
+                Selection.End);
+        }
+
+        public void RefreshTextLineSelectionVisual(TextLineUI lineUI)
 		{
             if (Selection == null ||
                 Selection.IsEmpty)
@@ -385,23 +420,23 @@ namespace NTL.ScriptEditor
 				int index = lineUI.RealIndex;
 				string text = lineUI.RealText;
 
-				if(index < firstLine || index > lastLine)
+                if (curLineIndex == index)
+                {
+                    lineUI = null;
+                    text = ScriptLine.Text;
+                }
+
+                if (index < firstLine || index > lastLine)
 				{
 					ScriptLine.HideSelectionVisual(lineUI);
 					continue;
 				}
 
-				if (curLineIndex == index)
-				{
-					lineUI = null;
-					text = ScriptLine.Text;
-				}
-				
-                if (firstLine == lastLine)
+				if (firstLine == lastLine)
                 {
 					ScriptLine.SetSelectionVisual(
 						start.CharacterIndex,
-						end.CharacterIndex, null);
+						end.CharacterIndex, lineUI);
 				}
                 else if (index == firstLine)
                 {
@@ -425,6 +460,15 @@ namespace NTL.ScriptEditor
         public void RefreshSelectionVisual()
         {
             RefreshMultiLineSelectionVisual();
+
+			//if (Selection == null || Selection.IsEmpty)
+			//{
+			//	selectionHandleController.Hide();
+			//	return;
+			//}
+
+			selectionHandleController.Show();
+            RefreshSelectionHandles();
         }
 
         public void BeginSelection()
@@ -446,6 +490,7 @@ namespace NTL.ScriptEditor
 
             Selection.Clear();
 			HideAllSelectionVisuals();
+            selectionHandleController.Hide();
         }
 
         public bool HasSelection()
@@ -510,6 +555,101 @@ namespace NTL.ScriptEditor
             );
 
             RefreshSelectionVisual();
+        }
+
+        public Vector2 GetTextPositionScreenPosition(
+            TextPosition position)
+        {
+			TextLineUI line = GetTextLineUI(position.LineIndex);
+			string txt = curLineIndex == line.RealIndex ? ScriptLine.Text : line.RealText;
+			Vector2 v = line.transform.position;
+            v.x = ScriptLine.GetCharacterWorldPosition(txt, position.CharacterIndex).x;
+			return v;
+		}
+
+        public void UpdateSelectionFromHandle(SelectionHandle handle, TextPosition fixedPosition)
+		{
+			if (Selection == null)
+				return;
+
+			TextPosition position;
+
+			if (!TryGetTextPosition(
+				handle.transform,
+				out position))
+			{
+				return;
+			}
+
+            //if (handle.HandleType ==
+            //	SelectionHandleType.Start)
+            //{
+            //	Selection.SetStart(position);
+            //}
+            //else
+            //{
+            //	Selection.SetEnd(position);
+            //}
+
+            Selection.Set(position, fixedPosition);
+
+            RefreshSelectionVisual();
+		}
+
+        private bool TryGetTextPosition(Transform handleTransform, out TextPosition position)
+        {
+            position = new TextPosition(
+                0,
+                0);
+
+			TextLineUI lineUI = null;
+			for (int i = 0; i < WrapItem.ItemList.Length; i++)
+			{
+				TextLineUI line = (TextLineUI)WrapItem.ItemList[i];
+				if (!line.gameObject.activeSelf)
+					continue;
+				float h = ((RectTransform)line.transform).sizeDelta.y;
+				float y = line.transform.parent.InverseTransformPoint(handleTransform.position).y;
+				if(y <= line.transform.localPosition.y &&
+				   y >= line.transform.localPosition.y - h)
+				{
+					lineUI = line;
+					break;
+				}
+			}
+
+			if (lineUI == null)
+                return false;
+
+            return TryGetCharacterIndex(
+                lineUI,
+                handleTransform,
+                out position);
+        }
+
+        private bool TryGetCharacterIndex(TextLineUI lineUI, Transform _transform,
+									      out TextPosition position)
+        {
+            position =
+                new TextPosition(
+                    lineUI.RealIndex,
+                    0);
+
+            string txt = curLineIndex == lineUI.RealIndex ? ScriptLine.Text : lineUI.RealText;
+            int characterIndex = ScriptLine.WorldPositionToCharacterIndex(txt, _transform.position);
+
+            if (characterIndex < 0)
+                characterIndex = 0;
+
+            if (characterIndex > txt.Length)
+                characterIndex = txt.Length;
+
+            position =
+                new TextPosition(
+                    lineUI.RealIndex,
+                    characterIndex);
+
+            return true;
         }
 
         #endregion
